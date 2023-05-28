@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Phone Number Search Query Generator</title>
+</head>
+<body>
+	<h1>Phone Number Search Query Generator</h1>
+	<form method="post">
+		<label for="phone_number">Enter your phone number:</label>
+		<input type="text" name="phone_number" id="phone_number" required>
+		<input type="submit" value="Generate Search Query">
+	</form>
+	<?php
+	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		$phone_number = preg_replace('/\D/', '', $_POST['phone_number']); // removes all non-digits
+		
+		if(strlen($phone_number) != 10){
+			echo '<p>Invalid phone number. It should have 10 digits.</p>';
+			return;
+		}
+		
+		$formats = [
+			'xxx-xxx-xxxx', // hyphen-separated
+			'xxx.xxx.xxxx', // period-separated
+			'xxxxxxxxxx', // concatenated
+			'(xxx) xxx-xxxx', // formatted with parentheses
+			'xxx xxx xxxx', // formatted with spaces
+			'xxx-xxxx', // 8-digit number with area code
+			'xxxx-xxxx', // 8-digit number without area code
+		];
+		$query_terms = [];
+		foreach ($formats as $format) {
+			$replacement = 0;
+			$formatted_number = preg_replace_callback('/x/', function ($match) use ($phone_number, &$replacement) {
+				return $phone_number[$replacement++];
+			}, $format);
+			$query_terms[] = '"' . $formatted_number . '"';
+		}
+		$search_query = implode(' OR ', $query_terms);
+		$search_url = 'https://www.google.com/search?q=' . urlencode($search_query);
+		echo '<p>Your search query is: <a href="' . $search_url . '">' . $search_query . '</a></p>';
+	}
+?>
+
+</body>
+</html>
